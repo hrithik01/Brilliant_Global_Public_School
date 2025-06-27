@@ -152,6 +152,30 @@ body {
   transform: translateY(-1px);
 }
 
+/* Small Button Styles for Tables */
+.btn-sm {
+  padding: 0.4rem 0.8rem;
+  font-size: 0.85rem;
+  margin-right: 0.5rem;
+  min-width: auto;
+}
+
+.btn-small {
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+  margin-right: 0.6rem;
+  min-width: auto;
+}
+
+/* Table Action Buttons */
+td .btn {
+  margin-right: 0.5rem;
+}
+
+td .btn:last-child {
+  margin-right: 0;
+}
+
 /* Table Styles */
 .students-table-container,
 .transactions-table-container,
@@ -189,6 +213,14 @@ body {
   padding: 1.05rem 1.2rem; /* 20% larger */
   border-bottom: 1px solid #e2e8f0;
   vertical-align: middle;
+}
+
+/* Actions column styling */
+.students-table td:last-child,
+.transactions-table td:last-child,
+.towns-table td:last-child {
+  white-space: nowrap;
+  width: 1%;
 }
 
 .students-table tr:hover,
@@ -672,5 +704,86 @@ input:checked + .slider:before {
   
   .modal-form {
     padding: 1.2rem; /* Reduced padding on mobile */
+  }
+}
+
+/* Management Container Styles */
+.management-container {
+  padding: 1.5rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.management-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.management-header h2 {
+  color: #2d3748;
+  font-size: 1.8rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+/* Filters Section */
+.filters {
+  background: #f8f9fa;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  border: 1px solid #e2e8f0;
+}
+
+.filter-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.filter-row:last-of-type {
+  margin-bottom: 0;
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.filter-actions {
+  margin-top: 1rem;
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* Table Container Improvements */
+.table-container {
+  margin-top: 1.5rem;
+}
+
+/* Responsive adjustments for management */
+@media (max-width: 768px) {
+  .management-container {
+    padding: 1rem;
+  }
+  
+  .management-header {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: stretch;
+    text-align: center;
+  }
+  
+  .filter-row {
+    grid-template-columns: 1fr;
+  }
+  
+  .filter-actions {
+    justify-content: center;
   }
 }

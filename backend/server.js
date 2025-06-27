@@ -268,14 +268,14 @@ app.get('/api/students/class/:className', (req, res) => {
 });
 
 app.post('/api/students', (req, res) => {
-  const { name, gender, dob, class: studentClass, parents_name, contact_info, town_id, house, fees_total, is_bus_service_opted, bus_fees_amount } = req.body;
+  const { name, gender, dob, class: studentClass, parents_name, contact_info, town_id, house, fees_total, is_bus_service_opted, bus_fees_amount, course_fees_amount } = req.body;
   
   const query = `
-    INSERT INTO students (name, gender, dob, class, parents_name, contact_info, town_id, house, fees_total, is_bus_service_opted, bus_fees_amount)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO students (name, gender, dob, class, parents_name, contact_info, town_id, house, fees_total, is_bus_service_opted, bus_fees_amount, course_fees_amount)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
   
-  db.run(query, [name, gender, dob, studentClass, parents_name, contact_info, town_id, house, fees_total, is_bus_service_opted ? 1 : 0, bus_fees_amount || 0], function(err) {
+  db.run(query, [name, gender, dob, studentClass, parents_name, contact_info, town_id, house, fees_total, is_bus_service_opted ? 1 : 0, bus_fees_amount || 0, course_fees_amount || 0], function(err) {
     if (err) {
       res.status(500).json({ error: err.message });
       return;
@@ -286,15 +286,15 @@ app.post('/api/students', (req, res) => {
 
 app.put('/api/students/:id', (req, res) => {
   const { id } = req.params;
-  const { name, gender, dob, class: studentClass, parents_name, contact_info, town_id, house, fees_total, is_bus_service_opted, bus_fees_amount } = req.body;
+  const { name, gender, dob, class: studentClass, parents_name, contact_info, town_id, house, fees_total, is_bus_service_opted, bus_fees_amount, course_fees_amount } = req.body;
   
   const query = `
     UPDATE students 
-    SET name = ?, gender = ?, dob = ?, class = ?, parents_name = ?, contact_info = ?, town_id = ?, house = ?, fees_total = ?, is_bus_service_opted = ?, bus_fees_amount = ?
+    SET name = ?, gender = ?, dob = ?, class = ?, parents_name = ?, contact_info = ?, town_id = ?, house = ?, fees_total = ?, is_bus_service_opted = ?, bus_fees_amount = ?, course_fees_amount = ?
     WHERE id = ?
   `;
   
-  db.run(query, [name, gender, dob, studentClass, parents_name, contact_info, town_id, house, fees_total, is_bus_service_opted ? 1 : 0, bus_fees_amount || 0, id], function(err) {
+  db.run(query, [name, gender, dob, studentClass, parents_name, contact_info, town_id, house, fees_total, is_bus_service_opted ? 1 : 0, bus_fees_amount || 0, course_fees_amount || 0, id], function(err) {
     if (err) {
       res.status(500).json({ error: err.message });
       return;

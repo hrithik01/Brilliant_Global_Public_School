@@ -264,8 +264,8 @@ const TransactionManagement: React.FC = () => {
       </div>
 
       {/* Transactions Table */}
-      <div className="table-container">
-        <table className="data-table">
+      <div className="table-container transactions-table-container">
+        <table className="transactions-table">
           <thead>
             <tr>
               <th>ID</th>
