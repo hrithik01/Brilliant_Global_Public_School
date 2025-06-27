@@ -113,6 +113,7 @@ Brilliant_school/
 - **Modern Switch Components**: For bus service enrollment
 - **Smart Forms**: Class-first dropdown with filtered student selection
 - **Detailed Student View**: Click student names to see complete information
+- **Smart Delete Confirmations**: Specific confirmation dialogs showing relevant details
 - **Professional Styling**: Clean, modern interface with proper spacing
 
 ## 📊 Database Schema
