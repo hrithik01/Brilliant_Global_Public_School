@@ -8,12 +8,13 @@ A comprehensive full-stack school management system built with modern web techno
 - ✅ Complete CRUD operations for students
 - ✅ Student details: Name, Gender, DOB, Class, Parents, Contact, Town, House
 - ✅ Bus service enrollment with fees tracking
+- ✅ Course fees management for each student
 - ✅ Enhanced UI with clickable student names for detailed view
 - ✅ Class and town-based filtering
 - ✅ Responsive design with 20% larger fonts for better visibility
 
 ### Transaction Management
-- ✅ Fee payment tracking (Main Fees & Bus Fees)
+- ✅ Fee payment tracking (Main Fees, Bus Fees & Course Fees)
 - ✅ Class-first dropdown selection for better UX
 - ✅ Comprehensive filtering (Class, Student, Date Range, Fee Type)
 - ✅ Automatic total fees calculation
@@ -119,14 +120,14 @@ Brilliant_school/
 ### Students Table
 - ID, Name, Gender, DOB, Class, Parents Name, Contact Info
 - Town ID (foreign key), House, Fees Total, Total Fees Paid
-- Bus Service Opted (boolean), Bus Fees Amount
+- Bus Service Opted (boolean), Bus Fees Amount, Course Fees Amount
 
 ### Towns Table
 - ID, Name
 
 ### Transactions Table
 - ID, Student ID (foreign key), Name, Date, Amount Paid
-- Fee Type (mainFees/busFees)
+- Fee Type (mainFees/busFees/courseFees)
 
 ## 🔧 API Endpoints
 

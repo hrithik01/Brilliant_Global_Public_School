@@ -83,7 +83,12 @@ const TransactionManagement: React.FC = () => {
   };
 
   const handleDelete = async (id: number) => {
-    if (window.confirm('Are you sure you want to delete this transaction?')) {
+    const transaction = transactions.find(t => t.id === id);
+    if (!transaction) return;
+    
+    const confirmMessage = `Are you sure you want to delete this transaction?\n\nAmount: ₹${transaction.amount_paid}\nDate: ${transaction.date}\nStudent: ${transaction.name}`;
+    
+    if (window.confirm(confirmMessage)) {
       try {
         await ApiService.deleteTransaction(id);
         await fetchTransactions();
@@ -106,6 +111,19 @@ const TransactionManagement: React.FC = () => {
       fee_type: transaction.fee_type
     });
     setIsAddModalOpen(true);
+  };
+
+  const getFeeTypeDisplay = (feeType: string) => {
+    switch (feeType) {
+      case 'mainFees':
+        return { label: 'Main Fees', className: 'badge-primary' };
+      case 'busFees':
+        return { label: 'Bus Fees', className: 'badge-warning' };
+      case 'courseFees':
+        return { label: 'Course Fees', className: 'badge-info' };
+      default:
+        return { label: 'Unknown', className: 'badge-secondary' };
+    }
   };
 
   const resetForm = () => {
@@ -193,6 +211,7 @@ const TransactionManagement: React.FC = () => {
               <option value="">All Fee Types</option>
               <option value="mainFees">Main Fees</option>
               <option value="busFees">Bus Fees</option>
+              <option value="courseFees">Course Fees</option>
             </select>
           </div>
         </div>
@@ -277,8 +296,8 @@ const TransactionManagement: React.FC = () => {
                   <td>{transaction.date}</td>
                   <td>₹{transaction.amount_paid}</td>
                   <td>
-                    <span className={`badge badge-${transaction.fee_type === 'mainFees' ? 'primary' : 'warning'}`}>
-                      {transaction.fee_type === 'mainFees' ? 'Main Fees' : 'Bus Fees'}
+                    <span className={`badge ${getFeeTypeDisplay(transaction.fee_type).className}`}>
+                      {getFeeTypeDisplay(transaction.fee_type).label}
                     </span>
                   </td>
                   <td>
@@ -413,6 +432,7 @@ const TransactionManagement: React.FC = () => {
                 >
                   <option value="mainFees">Main Fees</option>
                   <option value="busFees">Bus Fees</option>
+                  <option value="courseFees">Course Fees</option>
                 </select>
               </div>
 

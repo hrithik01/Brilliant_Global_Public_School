@@ -30,7 +30,8 @@ const StudentManagement: React.FC = () => {
     house: 'All' as typeof HOUSES[number],
     fees_total: '',
     is_bus_service_opted: false,
-    bus_fees_amount: ''
+    bus_fees_amount: '',
+    course_fees_amount: ''
   });
 
   useEffect(() => {
@@ -81,7 +82,8 @@ const StudentManagement: React.FC = () => {
       town_id: parseInt(formData.town_id),
       fees_total: formData.fees_total ? parseInt(formData.fees_total) : null,
       is_bus_service_opted: formData.is_bus_service_opted,
-      bus_fees_amount: formData.bus_fees_amount ? parseInt(formData.bus_fees_amount) : 0
+      bus_fees_amount: formData.bus_fees_amount ? parseInt(formData.bus_fees_amount) : 0,
+      course_fees_amount: formData.course_fees_amount ? parseInt(formData.course_fees_amount) : 0
     };
 
     try {
@@ -113,13 +115,17 @@ const StudentManagement: React.FC = () => {
       house: student.house,
       fees_total: student.fees_total?.toString() || '',
       is_bus_service_opted: student.is_bus_service_opted || false,
-      bus_fees_amount: student.bus_fees_amount?.toString() || ''
+      bus_fees_amount: student.bus_fees_amount?.toString() || '',
+      course_fees_amount: student.course_fees_amount?.toString() || ''
     });
     setShowForm(true);
   };
 
   const handleDelete = async (id: number) => {
-    if (window.confirm('Are you sure you want to delete this student?')) {
+    const student = students.find(s => s.id === id);
+    const studentName = student ? student.name : 'Unknown Student';
+    
+    if (window.confirm(`Are you sure you want to delete this student: ${studentName}?`)) {
       try {
         await ApiService.deleteStudent(id);
         loadStudents();
@@ -141,7 +147,8 @@ const StudentManagement: React.FC = () => {
       house: 'All' as typeof HOUSES[number],
       fees_total: '',
       is_bus_service_opted: false,
-      bus_fees_amount: ''
+      bus_fees_amount: '',
+      course_fees_amount: ''
     });
   };
 
@@ -339,6 +346,17 @@ const StudentManagement: React.FC = () => {
                     />
                   </div>
                 )}
+
+                <div className="form-group">
+                  <label>Course Fees Amount (₹):</label>
+                  <input
+                    type="number"
+                    value={formData.course_fees_amount}
+                    onChange={(e) => setFormData({...formData, course_fees_amount: e.target.value})}
+                    min="0"
+                    placeholder="Enter course fees amount"
+                  />
+                </div>
               </div>
 
               <div className="form-actions">
@@ -570,6 +588,11 @@ const StudentManagement: React.FC = () => {
                 <div className="detail-group">
                   <label>Bus Fees Amount:</label>
                   <span>₹{viewingStudent.bus_fees_amount || 0}</span>
+                </div>
+                
+                <div className="detail-group">
+                  <label>Course Fees Amount:</label>
+                  <span>₹{viewingStudent.course_fees_amount || 0}</span>
                 </div>
               </div>
               

@@ -39,6 +39,7 @@ db.serialize(() => {
     total_fees_paid INTEGER DEFAULT 0,
     is_bus_service_opted BOOLEAN DEFAULT 0,
     bus_fees_amount INTEGER DEFAULT 0,
+    course_fees_amount INTEGER DEFAULT 0,
     FOREIGN KEY (town_id) REFERENCES towns (id)
   )`);
 
@@ -49,7 +50,7 @@ db.serialize(() => {
     name TEXT NOT NULL,
     date TEXT NOT NULL,
     amount_paid INTEGER NOT NULL,
-    fee_type TEXT NOT NULL DEFAULT 'mainFees' CHECK(fee_type IN ('mainFees', 'busFees')),
+    fee_type TEXT NOT NULL DEFAULT 'mainFees' CHECK(fee_type IN ('mainFees', 'busFees', 'courseFees')),
     FOREIGN KEY (student_id) REFERENCES students (id) ON DELETE CASCADE
   )`);
 
@@ -79,6 +80,99 @@ db.serialize(() => {
     } else {
       console.log(`Towns table already has ${row.count} towns - skipping default data insertion`);
     }
+  });
+
+  // Migration: Update transactions table to support courseFees (if needed)
+  db.get("PRAGMA table_info(transactions)", (err, info) => {
+    if (err) {
+      console.error('Error checking transactions table schema:', err);
+      return;
+    }
+    
+    // Check if we need to migrate the fee_type constraint
+    db.get("SELECT sql FROM sqlite_master WHERE type='table' AND name='transactions'", (err, row) => {
+      if (err) {
+        console.error('Error checking table schema:', err);
+        return;
+      }
+      
+      if (row && row.sql && !row.sql.includes('courseFees')) {
+        console.log('Migrating transactions table to support courseFees...');
+        
+        // Create new table with updated constraint
+        db.run(`CREATE TABLE transactions_new (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          student_id INTEGER NOT NULL,
+          name TEXT NOT NULL,
+          date TEXT NOT NULL,
+          amount_paid INTEGER NOT NULL,
+          fee_type TEXT NOT NULL DEFAULT 'mainFees' CHECK(fee_type IN ('mainFees', 'busFees', 'courseFees')),
+          FOREIGN KEY (student_id) REFERENCES students (id) ON DELETE CASCADE
+        )`, (err) => {
+          if (err) {
+            console.error('Error creating new transactions table:', err);
+            return;
+          }
+          
+          // Copy data from old table
+          db.run(`INSERT INTO transactions_new SELECT * FROM transactions`, (err) => {
+            if (err) {
+              console.error('Error migrating transactions data:', err);
+              return;
+            }
+            
+            // Drop old table and rename new one
+            db.run(`DROP TABLE transactions`, (err) => {
+              if (err) {
+                console.error('Error dropping old transactions table:', err);
+                return;
+              }
+              
+              db.run(`ALTER TABLE transactions_new RENAME TO transactions`, (err) => {
+                if (err) {
+                  console.error('Error renaming new transactions table:', err);
+                } else {
+                  console.log('Successfully migrated transactions table to support courseFees');
+                }
+              });
+            });
+          });
+        });
+      } else {
+        console.log('Transactions table already supports courseFees - no migration needed');
+      }
+    });
+  });
+
+  // Migration: Add course_fees_amount to students table (if needed)
+  db.get("PRAGMA table_info(students)", (err, rows) => {
+    if (err) {
+      console.error('Error checking students table schema:', err);
+      return;
+    }
+    
+    // Check if course_fees_amount column exists
+    db.all("PRAGMA table_info(students)", (err, columns) => {
+      if (err) {
+        console.error('Error getting students table columns:', err);
+        return;
+      }
+      
+      const hasCourseFeesColumn = columns.some(col => col.name === 'course_fees_amount');
+      
+      if (!hasCourseFeesColumn) {
+        console.log('Adding course_fees_amount column to students table...');
+        db.run("ALTER TABLE students ADD COLUMN course_fees_amount INTEGER DEFAULT 0", (err) => {
+          if (err) {
+            console.error('Error adding course_fees_amount column:', err);
+          } else {
+            console.log('Successfully added course_fees_amount column to students table');
+          }
+        });
+      } else {
+        console.log('Students table already has course_fees_amount column - no migration needed');
+      }
+    });
   });
 });
 

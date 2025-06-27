@@ -56,7 +56,10 @@ const TownManagement: React.FC<TownManagementProps> = ({ onClose, onTownsUpdated
   };
 
   const handleDelete = async (id: number) => {
-    if (window.confirm('Are you sure you want to delete this town? This may affect students assigned to this town.')) {
+    const town = towns.find(t => t.id === id);
+    const townName = town ? town.name : 'Unknown Town';
+    
+    if (window.confirm(`Are you sure you want to delete this town: ${townName}? This may affect students assigned to this town.`)) {
       try {
         await ApiService.deleteTown(id);
         loadTowns();

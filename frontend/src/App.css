@@ -420,6 +420,11 @@ body {
   color: #97266d;
 }
 
+.badge-warning {
+  background: #fef5e7;
+  color: #c05621;
+}
+
 /* Checkbox Styles */
 .form-group label input[type="checkbox"] {
   margin-right: 0.5rem;
