@@ -15,6 +15,7 @@ export interface Student {
   is_bus_service_opted: boolean;
   bus_fees_amount: number;
   course_fees_amount: number;
+  remarks?: string;
 }
 
 export interface Town {

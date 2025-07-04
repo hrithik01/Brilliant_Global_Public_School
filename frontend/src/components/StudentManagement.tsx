@@ -31,7 +31,8 @@ const StudentManagement: React.FC = () => {
     fees_total: '',
     is_bus_service_opted: false,
     bus_fees_amount: '',
-    course_fees_amount: ''
+    course_fees_amount: '',
+    remarks: ''
   });
 
   useEffect(() => {
@@ -83,7 +84,8 @@ const StudentManagement: React.FC = () => {
       fees_total: formData.fees_total ? parseInt(formData.fees_total) : null,
       is_bus_service_opted: formData.is_bus_service_opted,
       bus_fees_amount: formData.bus_fees_amount ? parseInt(formData.bus_fees_amount) : 0,
-      course_fees_amount: formData.course_fees_amount ? parseInt(formData.course_fees_amount) : 0
+      course_fees_amount: formData.course_fees_amount ? parseInt(formData.course_fees_amount) : 0,
+      remarks: formData.remarks || ''
     };
 
     try {
@@ -116,7 +118,8 @@ const StudentManagement: React.FC = () => {
       fees_total: student.fees_total?.toString() || '',
       is_bus_service_opted: student.is_bus_service_opted || false,
       bus_fees_amount: student.bus_fees_amount?.toString() || '',
-      course_fees_amount: student.course_fees_amount?.toString() || ''
+      course_fees_amount: student.course_fees_amount?.toString() || '',
+      remarks: student.remarks || ''
     });
     setShowForm(true);
   };
@@ -148,7 +151,8 @@ const StudentManagement: React.FC = () => {
       fees_total: '',
       is_bus_service_opted: false,
       bus_fees_amount: '',
-      course_fees_amount: ''
+      course_fees_amount: '',
+      remarks: ''
     });
   };
 
@@ -355,6 +359,17 @@ const StudentManagement: React.FC = () => {
                     onChange={(e) => setFormData({...formData, course_fees_amount: e.target.value})}
                     min="0"
                     placeholder="Enter course fees amount"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Remarks:</label>
+                  <textarea
+                    value={formData.remarks}
+                    onChange={(e) => setFormData({...formData, remarks: e.target.value})}
+                    placeholder="Enter any additional remarks or notes"
+                    rows={3}
+                    style={{ resize: 'vertical' }}
                   />
                 </div>
               </div>
@@ -594,6 +609,13 @@ const StudentManagement: React.FC = () => {
                   <label>Course Fees Amount:</label>
                   <span>₹{viewingStudent.course_fees_amount || 0}</span>
                 </div>
+                
+                {viewingStudent.remarks && (
+                  <div className="detail-group">
+                    <label>Remarks:</label>
+                    <span style={{ whiteSpace: 'pre-wrap' }}>{viewingStudent.remarks}</span>
+                  </div>
+                )}
               </div>
               
               <div className="modal-actions">
