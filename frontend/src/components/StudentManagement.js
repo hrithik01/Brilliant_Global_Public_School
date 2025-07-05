@@ -1,17 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { Student, Town, CLASSES, GENDERS, HOUSES } from '../types';
+import { CLASSES, GENDERS, HOUSES } from '../types';
 import { ApiService } from '../services/api';
 import TownManagement from './TownManagement';
 
-const StudentManagement: React.FC = () => {
-  const [students, setStudents] = useState<Student[]>([]);
-  const [filteredStudents, setFilteredStudents] = useState<Student[]>([]);
-  const [towns, setTowns] = useState<Town[]>([]);
-  const [editingStudent, setEditingStudent] = useState<Student | null>(null);
+const StudentManagement = React.memo(() => {
+  const [students, setStudents] = useState([]);
+  const [filteredStudents, setFilteredStudents] = useState([]);
+  const [towns, setTowns] = useState([]);
+  const [editingStudent, setEditingStudent] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [showTownManagement, setShowTownManagement] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [viewingStudent, setViewingStudent] = useState<Student | null>(null);
+  const [viewingStudent, setViewingStudent] = useState(null);
   
   // Filter states
   const [filters, setFilters] = useState({
@@ -21,13 +21,13 @@ const StudentManagement: React.FC = () => {
 
   const [formData, setFormData] = useState({
     name: '',
-    gender: 'Male' as 'Male' | 'Female',
+    gender: 'Male',
     dob: '',
-    class: 'Nursery' as typeof CLASSES[number],
+    class: 'Nursery',
     parents_name: '',
     contact_info: '',
     town_id: '',
-    house: 'All' as typeof HOUSES[number],
+    house: 'All',
     fees_total: '',
     is_bus_service_opted: false,
     bus_fees_amount: '',
@@ -75,7 +75,7 @@ const StudentManagement: React.FC = () => {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
     const studentData = {
@@ -104,7 +104,7 @@ const StudentManagement: React.FC = () => {
     }
   };
 
-  const handleEdit = (student: Student) => {
+  const handleEdit = (student) => {
     setEditingStudent(student);
     setFormData({
       name: student.name,
@@ -124,7 +124,7 @@ const StudentManagement: React.FC = () => {
     setShowForm(true);
   };
 
-  const handleDelete = async (id: number) => {
+  const handleDelete = async (id) => {
     const student = students.find(s => s.id === id);
     const studentName = student ? student.name : 'Unknown Student';
     
@@ -141,13 +141,13 @@ const StudentManagement: React.FC = () => {
   const resetForm = () => {
     setFormData({
       name: '',
-      gender: 'Male' as 'Male' | 'Female',
+      gender: 'Male',
       dob: '',
-      class: 'Nursery' as typeof CLASSES[number],
+      class: 'Nursery',
       parents_name: '',
       contact_info: '',
       town_id: '',
-      house: 'All' as typeof HOUSES[number],
+      house: 'All',
       fees_total: '',
       is_bus_service_opted: false,
       bus_fees_amount: '',
@@ -162,85 +162,130 @@ const StudentManagement: React.FC = () => {
     setShowForm(true);
   };
 
-  const handleFilterChange = (field: string, value: string) => {
+  const handleFilterChange = (filterType, value) => {
     setFilters(prev => ({
       ...prev,
-      [field]: value
+      [filterType]: value
     }));
   };
 
-  const clearFilters = () => {
-    setFilters({
-      class: '',
-      town_id: ''
-    });
+  const handleOverlayClick = (e, closeFunction) => {
+    if (e.target === e.currentTarget) {
+      closeFunction();
+    }
   };
 
-  if (showTownManagement) {
-    return (
-      <TownManagement 
-        onClose={() => setShowTownManagement(false)}
-        onTownsUpdated={loadTowns}
-      />
-    );
+  const handleViewDetails = (student) => {
+    setViewingStudent(student);
+  };
+
+  const getAvailableBalance = (student) => {
+    const totalFees = student.fees_total || 0;
+    const paidFees = student.total_fees_paid || 0;
+    return totalFees - paidFees;
+  };
+
+  const getStatusColor = (student) => {
+    const balance = getAvailableBalance(student);
+    if (balance <= 0) return 'status-paid';
+    if (balance > 0 && student.total_fees_paid > 0) return 'status-partial';
+    return 'status-unpaid';
+  };
+
+  const getStatusText = (student) => {
+    const balance = getAvailableBalance(student);
+    if (balance <= 0) return 'Paid';
+    if (balance > 0 && student.total_fees_paid > 0) return 'Partial';
+    return 'Unpaid';
+  };
+
+  if (loading) {
+    return <div className="loading">Loading students...</div>;
   }
 
   return (
     <div className="student-management">
       <div className="management-header">
         <h2>Student Management</h2>
-        <div className="header-buttons">
+        <div className="header-actions">
           <button onClick={handleNewStudent} className="btn btn-primary">
             Add New Student
           </button>
-          <button onClick={() => setShowTownManagement(true)} className="btn btn-secondary">
+          <button 
+            onClick={() => setShowTownManagement(true)}
+            className="btn btn-secondary"
+          >
             Manage Towns
           </button>
         </div>
       </div>
 
+      {/* Town Management Modal */}
+      {showTownManagement && (
+        <div className="modal-overlay" onClick={(e) => handleOverlayClick(e, () => setShowTownManagement(false))}>
+          <div className="modal">
+            <div className="modal-header">
+              <h3>Town Management</h3>
+              <button 
+                className="close-btn"
+                onClick={() => setShowTownManagement(false)}
+              >
+                ×
+              </button>
+            </div>
+            <div className="modal-body">
+              <TownManagement onClose={() => setShowTownManagement(false)} />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Student Form Modal */}
       {showForm && (
-        <div className="modal-overlay">
+        <div className="modal-overlay" onClick={(e) => handleOverlayClick(e, () => setShowForm(false))}>
           <div className="modal">
             <div className="modal-header">
               <h3>{editingStudent ? 'Edit Student' : 'Add New Student'}</h3>
-              <button
-                className="modal-close"
+              <button 
+                className="close-btn"
                 onClick={() => setShowForm(false)}
               >
                 ×
               </button>
             </div>
-            
-            <form onSubmit={handleSubmit}>
-              <div className="modal-form">
-                <div className="form-grid">
+            <div className="modal-body">
+              <form onSubmit={handleSubmit} className="student-form">
+              <div className="form-container">
+              <div className="form-row">
                 <div className="form-group">
-                  <label>Name (max 100 characters):</label>
+                  <label>Name*:</label>
                   <input
                     type="text"
                     value={formData.name}
                     onChange={(e) => setFormData({...formData, name: e.target.value})}
-                    maxLength={100}
                     required
+                    maxLength={100}
+                    placeholder="Enter student name"
                   />
                 </div>
 
                 <div className="form-group">
-                  <label>Gender:</label>
+                  <label>Gender*:</label>
                   <select
                     value={formData.gender}
-                    onChange={(e) => setFormData({...formData, gender: e.target.value as any})}
+                    onChange={(e) => setFormData({...formData, gender: e.target.value})}
                     required
                   >
-                    {GENDERS.map(gender => (
-                      <option key={gender} value={gender}>{gender}</option>
+                    {GENDERS.map((gender) => (
+                      <option key={gender} value={gender}>
+                        {gender}
+                      </option>
                     ))}
                   </select>
                 </div>
 
                 <div className="form-group">
-                  <label>Date of Birth:</label>
+                  <label>Date of Birth*:</label>
                   <input
                     type="date"
                     value={formData.dob}
@@ -248,50 +293,36 @@ const StudentManagement: React.FC = () => {
                     required
                   />
                 </div>
+              </div>
 
+              <div className="form-row">
                 <div className="form-group">
-                  <label>Class:</label>
+                  <label>Class*:</label>
                   <select
                     value={formData.class}
-                    onChange={(e) => setFormData({...formData, class: e.target.value as any})}
+                    onChange={(e) => setFormData({...formData, class: e.target.value})}
                     required
                   >
-                    {CLASSES.map(cls => (
-                      <option key={cls} value={cls}>{cls}</option>
+                    {CLASSES.map((cls) => (
+                      <option key={cls} value={cls}>
+                        {cls}
+                      </option>
                     ))}
                   </select>
                 </div>
 
                 <div className="form-group">
-                  <label>Parents Name:</label>
-                  <input
-                    type="text"
-                    value={formData.parents_name}
-                    onChange={(e) => setFormData({...formData, parents_name: e.target.value})}
-                    required
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>Contact Info:</label>
-                  <input
-                    type="text"
-                    value={formData.contact_info}
-                    onChange={(e) => setFormData({...formData, contact_info: e.target.value})}
-                    required
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>Town:</label>
+                  <label>Town*:</label>
                   <select
                     value={formData.town_id}
                     onChange={(e) => setFormData({...formData, town_id: e.target.value})}
                     required
                   >
-                    <option value="">Select a town</option>
-                    {towns.map(town => (
-                      <option key={town.id} value={town.id}>{town.name}</option>
+                    <option value="">Select Town</option>
+                    {towns.map((town) => (
+                      <option key={town.id} value={town.id}>
+                        {town.name}
+                      </option>
                     ))}
                   </select>
                 </div>
@@ -300,42 +331,62 @@ const StudentManagement: React.FC = () => {
                   <label>House:</label>
                   <select
                     value={formData.house}
-                    onChange={(e) => setFormData({...formData, house: e.target.value as any})}
-                    required
+                    onChange={(e) => setFormData({...formData, house: e.target.value})}
                   >
-                    {HOUSES.map(house => (
-                      <option key={house} value={house} style={{color: house === 'All' ? 'black' : house}}>
+                    {HOUSES.map((house) => (
+                      <option key={house} value={house}>
                         {house}
                       </option>
                     ))}
                   </select>
                 </div>
+              </div>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Parents Name*:</label>
+                  <input
+                    type="text"
+                    value={formData.parents_name}
+                    onChange={(e) => setFormData({...formData, parents_name: e.target.value})}
+                    required
+                    placeholder="Enter parents name"
+                  />
+                </div>
 
                 <div className="form-group">
-                  <label>Total Fees (optional):</label>
+                  <label>Contact Info*:</label>
+                  <input
+                    type="text"
+                    value={formData.contact_info}
+                    onChange={(e) => setFormData({...formData, contact_info: e.target.value})}
+                    required
+                    placeholder="Enter contact information"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Total Fees (₹):</label>
                   <input
                     type="number"
                     value={formData.fees_total}
                     onChange={(e) => setFormData({...formData, fees_total: e.target.value})}
                     min="0"
+                    placeholder="Enter total fees"
                   />
                 </div>
+              </div>
 
+              <div className="form-row">
                 <div className="form-group">
-                  <label>Bus Service Opted:</label>
-                  <div className="switch-container">
-                    <label className="switch">
-                      <input
-                        type="checkbox"
-                        checked={formData.is_bus_service_opted}
-                        onChange={(e) => setFormData({...formData, is_bus_service_opted: e.target.checked})}
-                      />
-                      <span className="slider"></span>
-                    </label>
-                    <span className="switch-label">
-                      {formData.is_bus_service_opted ? 'Yes' : 'No'}
-                    </span>
-                  </div>
+                  <label className="checkbox-label">
+                    <input
+                      type="checkbox"
+                      checked={formData.is_bus_service_opted}
+                      onChange={(e) => setFormData({...formData, is_bus_service_opted: e.target.checked})}
+                    />
+                    Bus Service Opted
+                  </label>
                 </div>
 
                 {formData.is_bus_service_opted && (
@@ -388,6 +439,7 @@ const StudentManagement: React.FC = () => {
               </div>
             </div>
             </form>
+            </div>
           </div>
         </div>
       )}
@@ -427,129 +479,140 @@ const StudentManagement: React.FC = () => {
               ))}
             </select>
           </div>
-          
-          <button onClick={clearFilters} className="btn btn-secondary">
-            Clear Filters
-          </button>
-        </div>
-        <div className="filter-info">
-          Showing {filteredStudents.length} of {students.length} students
+
+          <div className="filter-group">
+            <button 
+              onClick={() => setFilters({ class: '', town_id: '' })}
+              className="btn btn-secondary"
+            >
+              Clear Filters
+            </button>
+          </div>
         </div>
       </div>
 
-      <div className="table-container">
-        {loading ? (
-          <div className="loading">Loading students...</div>
-        ) : (
-          <table className="students-table">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Name</th>
-                <th>Class</th>
-                <th>Gender</th>
-                <th>Town</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredStudents.map(student => (
-                <tr key={student.id}>
-                  <td>{student.id}</td>
-                  <td>
-                    <button 
-                      className="student-name-link"
-                      onClick={() => setViewingStudent(student)}
-                      style={{
-                        background: 'none',
-                        border: 'none',
-                        color: '#667eea',
-                        textDecoration: 'underline',
-                        cursor: 'pointer',
-                        fontSize: 'inherit',
-                        padding: 0,
-                        fontWeight: 'normal'
-                      }}
-                    >
-                      {student.name}
-                    </button>
-                  </td>
-                  <td>
-                    <span className={`badge badge-${student.class.toLowerCase()}`}>
-                      {student.class}
-                    </span>
-                  </td>
-                  <td>{student.gender}</td>
-                  <td>{student.town_name}</td>
-                  <td>
-                    <button 
+      {/* Students Table */}
+      <div className="students-section">
+        <h4>Students List ({filteredStudents.length} {filteredStudents.length === 1 ? 'student' : 'students'})</h4>
+        <div className="students-table-container">
+        <table className="students-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Class</th>
+              <th>Gender</th>
+              <th>Town</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredStudents.map((student) => (
+              <tr key={student.id}>
+                <td>
+                  <button
+                    onClick={() => handleViewDetails(student)}
+                    className="student-name-link"
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: '#4c51bf',
+                      cursor: 'pointer',
+                      textDecoration: 'underline',
+                      fontSize: 'inherit',
+                      padding: 0,
+                      textAlign: 'left'
+                    }}
+                  >
+                    {student.name}
+                  </button>
+                </td>
+                <td>{student.class}</td>
+                <td>{student.gender}</td>
+                <td>{student.town_name || 'N/A'}</td>
+                <td>
+                  <div className="table-actions">
+                    <button
                       onClick={() => handleEdit(student)}
-                      className="btn btn-small btn-primary"
+                      className="btn btn-sm btn-primary"
+                      title="Edit"
                     >
-                      Edit
+                      ✏️
                     </button>
-                    <button 
+                    <button
                       onClick={() => handleDelete(student.id)}
-                      className="btn btn-small btn-danger"
+                      className="btn btn-sm btn-danger"
+                      title="Delete"
                     >
-                      Delete
+                      🗑️
                     </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-        {filteredStudents.length === 0 && !loading && (
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        
+        {filteredStudents.length === 0 && (
           <div className="no-data">
-            {students.length === 0 ? 'No students found' : 'No students match the current filters'}
+            <p>No students found.</p>
           </div>
         )}
+        </div>
       </div>
 
       {/* Student Details Modal */}
       {viewingStudent && (
-        <div className="modal-overlay">
+        <div className="modal-overlay" onClick={(e) => handleOverlayClick(e, () => setViewingStudent(null))}>
           <div className="modal">
             <div className="modal-header">
               <h3>Student Details - {viewingStudent.name}</h3>
-              <button
-                className="modal-close"
+              <button 
+                className="close-btn"
                 onClick={() => setViewingStudent(null)}
+                title="Close"
               >
                 ×
               </button>
             </div>
-
-            <div className="modal-form">
-              <div className="student-details-grid">
-                <div className="detail-group">
-                  <label>ID:</label>
-                  <span>{viewingStudent.id}</span>
-                </div>
-                
+            <div className="modal-body">
+              <div className="student-details">
+              <div className="detail-row">
                 <div className="detail-group">
                   <label>Name:</label>
                   <span>{viewingStudent.name}</span>
                 </div>
                 
                 <div className="detail-group">
+                  <label>Class:</label>
+                  <span>{viewingStudent.class}</span>
+                </div>
+                
+                <div className="detail-group">
                   <label>Gender:</label>
                   <span>{viewingStudent.gender}</span>
                 </div>
-                
+              </div>
+              
+              <div className="detail-row">
                 <div className="detail-group">
                   <label>Date of Birth:</label>
-                  <span>{new Date(viewingStudent.dob).toLocaleDateString()}</span>
+                  <span>{viewingStudent.dob}</span>
                 </div>
                 
                 <div className="detail-group">
-                  <label>Class:</label>
-                  <span className={`badge badge-${viewingStudent.class.toLowerCase()}`}>
-                    {viewingStudent.class}
-                  </span>
+                  <label>Town:</label>
+                  <span>{viewingStudent.town_name || 'N/A'}</span>
                 </div>
                 
+                <div className="detail-group">
+                  <label>House:</label>
+                  <span className={`house-tag house-${viewingStudent.house.toLowerCase()}`}>
+                    {viewingStudent.house}
+                  </span>
+                </div>
+              </div>
+              
+              <div className="detail-row">
                 <div className="detail-group">
                   <label>Parents Name:</label>
                   <span>{viewingStudent.parents_name}</span>
@@ -561,45 +624,33 @@ const StudentManagement: React.FC = () => {
                 </div>
                 
                 <div className="detail-group">
-                  <label>Town:</label>
-                  <span>{viewingStudent.town_name}</span>
-                </div>
-                
-                <div className="detail-group">
-                  <label>House:</label>
-                  <span 
-                    className="house-badge" 
-                    style={{
-                      backgroundColor: viewingStudent.house === 'All' ? '#gray' : viewingStudent.house,
-                      color: 'white',
-                      padding: '4px 12px',
-                      borderRadius: '6px',
-                      fontSize: '0.9rem'
-                    }}
-                  >
-                    {viewingStudent.house}
+                  <label>Bus Service:</label>
+                  <span className={`status-tag ${viewingStudent.is_bus_service_opted ? 'status-paid' : 'status-unpaid'}`}>
+                    {viewingStudent.is_bus_service_opted ? 'Yes' : 'No'}
                   </span>
                 </div>
-                
+              </div>
+              
+              <div className="detail-row">
                 <div className="detail-group">
                   <label>Total Fees:</label>
-                  <span>₹{viewingStudent.fees_total || 0}</span>
+                  <span style={{ fontWeight: 'bold', color: '#2d3748' }}>₹{viewingStudent.fees_total || 0}</span>
                 </div>
                 
                 <div className="detail-group">
                   <label>Fees Paid:</label>
-                  <span>₹{viewingStudent.total_fees_paid}</span>
+                  <span style={{ fontWeight: 'bold', color: '#38a169' }}>₹{viewingStudent.total_fees_paid || 0}</span>
                 </div>
                 
                 <div className="detail-group">
-                  <label>Bus Service:</label>
-                  <span 
-                    className={`badge ${viewingStudent.is_bus_service_opted ? 'badge-success' : 'badge-secondary'}`}
-                  >
-                    {viewingStudent.is_bus_service_opted ? 'Yes' : 'No'}
+                  <label>Balance:</label>
+                  <span style={{ fontWeight: 'bold', color: getAvailableBalance(viewingStudent) > 0 ? '#e53e3e' : '#38a169' }}>
+                    ₹{getAvailableBalance(viewingStudent)}
                   </span>
                 </div>
-                
+              </div>
+              
+              <div className="detail-row">
                 <div className="detail-group">
                   <label>Bus Fees Amount:</label>
                   <span>₹{viewingStudent.bus_fees_amount || 0}</span>
@@ -610,37 +661,51 @@ const StudentManagement: React.FC = () => {
                   <span>₹{viewingStudent.course_fees_amount || 0}</span>
                 </div>
                 
-                {viewingStudent.remarks && (
-                  <div className="detail-group">
-                    <label>Remarks:</label>
-                    <span style={{ whiteSpace: 'pre-wrap' }}>{viewingStudent.remarks}</span>
-                  </div>
-                )}
+                <div className="detail-group">
+                  <label>Payment Status:</label>
+                  <span className={`status-tag ${getStatusColor(viewingStudent)}`}>
+                    {getStatusText(viewingStudent)}
+                  </span>
+                </div>
               </div>
               
-              <div className="modal-actions">
-                <button 
-                  className="btn btn-primary"
-                  onClick={() => {
-                    setViewingStudent(null);
-                    handleEdit(viewingStudent);
-                  }}
-                >
-                  Edit Student
-                </button>
-                <button 
-                  className="btn btn-secondary"
-                  onClick={() => setViewingStudent(null)}
-                >
-                  Close
-                </button>
-              </div>
+              {viewingStudent.remarks && (
+                <div className="detail-row">
+                  <div className="detail-group full-width">
+                    <label>Remarks:</label>
+                    <span style={{ whiteSpace: 'pre-wrap', padding: '0.5rem', backgroundColor: '#f7fafc', borderRadius: '4px', display: 'block' }}>
+                      {viewingStudent.remarks}
+                    </span>
+                  </div>
+                </div>
+              )}
+            </div>
+            </div>
+            
+            <div className="modal-actions">
+              <button 
+                className="btn btn-primary"
+                onClick={() => {
+                  setViewingStudent(null);
+                  handleEdit(viewingStudent);
+                }}
+              >
+                Edit Student
+              </button>
+              <button 
+                className="btn btn-secondary"
+                onClick={() => setViewingStudent(null)}
+              >
+                Close
+              </button>
             </div>
           </div>
         </div>
       )}
     </div>
   );
-};
+});
+
+StudentManagement.displayName = 'StudentManagement';
 
 export default StudentManagement;

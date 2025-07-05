@@ -4,7 +4,7 @@ import StudentManagement from './components/StudentManagement';
 import TransactionManagement from './components/TransactionManagement';
 
 function App() {
-  const [currentView, setCurrentView] = useState<'students' | 'transactions'>('students');
+  const [currentView, setCurrentView] = useState('students');
 
   return (
     <div className="App">

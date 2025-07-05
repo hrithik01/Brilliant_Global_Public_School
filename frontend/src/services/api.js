@@ -7,12 +7,12 @@ export class ApiService {
     return response.json();
   }
 
-  static async getStudentsByClass(className: string) {
+  static async getStudentsByClass(className) {
     const response = await fetch(`${API_BASE_URL}/students/class/${className}`);
     return response.json();
   }
 
-  static async createStudent(student: any) {
+  static async createStudent(student) {
     const response = await fetch(`${API_BASE_URL}/students`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -21,7 +21,7 @@ export class ApiService {
     return response.json();
   }
 
-  static async updateStudent(id: number, student: any) {
+  static async updateStudent(id, student) {
     const response = await fetch(`${API_BASE_URL}/students/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
@@ -30,7 +30,7 @@ export class ApiService {
     return response.json();
   }
 
-  static async deleteStudent(id: number) {
+  static async deleteStudent(id) {
     const response = await fetch(`${API_BASE_URL}/students/${id}`, {
       method: 'DELETE'
     });
@@ -43,7 +43,7 @@ export class ApiService {
     return response.json();
   }
 
-  static async createTown(town: { name: string }) {
+  static async createTown(town) {
     const response = await fetch(`${API_BASE_URL}/towns`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -52,7 +52,7 @@ export class ApiService {
     return response.json();
   }
 
-  static async updateTown(id: number, town: { name: string }) {
+  static async updateTown(id, town) {
     const response = await fetch(`${API_BASE_URL}/towns/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
@@ -61,7 +61,7 @@ export class ApiService {
     return response.json();
   }
 
-  static async deleteTown(id: number) {
+  static async deleteTown(id) {
     const response = await fetch(`${API_BASE_URL}/towns/${id}`, {
       method: 'DELETE'
     });
@@ -74,7 +74,12 @@ export class ApiService {
     return response.json();
   }
 
-  static async createTransaction(transaction: any) {
+  static async getTransactionsByStudent(studentId) {
+    const response = await fetch(`${API_BASE_URL}/transactions/student/${studentId}`);
+    return response.json();
+  }
+
+  static async createTransaction(transaction) {
     const response = await fetch(`${API_BASE_URL}/transactions`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -83,7 +88,7 @@ export class ApiService {
     return response.json();
   }
 
-  static async updateTransaction(id: number, transaction: any) {
+  static async updateTransaction(id, transaction) {
     const response = await fetch(`${API_BASE_URL}/transactions/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
@@ -92,27 +97,10 @@ export class ApiService {
     return response.json();
   }
 
-  static async deleteTransaction(id: number) {
+  static async deleteTransaction(id) {
     const response = await fetch(`${API_BASE_URL}/transactions/${id}`, {
       method: 'DELETE'
     });
     return response.json();
   }
 }
-
-// Individual function exports for easier imports
-export const getStudents = ApiService.getStudents;
-export const getStudentsByClass = ApiService.getStudentsByClass;
-export const createStudent = ApiService.createStudent;
-export const updateStudent = ApiService.updateStudent;
-export const deleteStudent = ApiService.deleteStudent;
-
-export const getTowns = ApiService.getTowns;
-export const createTown = ApiService.createTown;
-export const updateTown = ApiService.updateTown;
-export const deleteTown = ApiService.deleteTown;
-
-export const getTransactions = ApiService.getTransactions;
-export const createTransaction = ApiService.createTransaction;
-export const updateTransaction = ApiService.updateTransaction;
-export const deleteTransaction = ApiService.deleteTransaction;
