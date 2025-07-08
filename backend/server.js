@@ -9,7 +9,32 @@ const PORT = 3001;
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Since frontend and backend will run on same machine, no CORS needed
+// Minimal CORS for localhost only (since frontend runs on port 3000)
+app.use((req, res, next) => {
+  // Only allow localhost origins for security
+  const allowedOrigins = ['http://localhost:3000', 'http://127.0.0.1:3000'];
+  const origin = req.headers.origin;
+  
+  if (allowedOrigins.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  }
+  
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  
+  // Handle preflight requests
+  if (req.method === 'OPTIONS') {
+    res.status(200).end();
+    return;
+  }
+  
+  // Security headers
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+  next();
+});
 
 // Database setup with optimizations
 const dbPath = path.join(__dirname, 'school.db');
@@ -520,9 +545,7 @@ app.get('/api/health', (req, res) => {
 
 // Start server with better error handling
 const server = app.listen(PORT, '127.0.0.1', () => {
-  console.log(`🚀 Brilliant School Backend running on http://127.0.0.1:${PORT}`);
-  console.log(`📊 Health check: http://127.0.0.1:${PORT}/api/health`);
-  console.log(`⚡ Optimized for Windows 8.1 - CORS disabled, compression enabled`);
+  console.log(`Brilliant School Backend running on http://127.0.0.1:${PORT}`);
 });
 
 // Handle server errors
