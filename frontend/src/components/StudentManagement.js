@@ -11,11 +11,12 @@ const StudentManagement = React.memo(() => {
   const [showForm, setShowForm] = useState(false);
   const [showTownManagement, setShowTownManagement] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [viewingStudent, setViewingStudent] = useState(null);
   
-  // Filter states
+  // Filter states - default to Nursery class
   const [filters, setFilters] = useState({
-    class: '',
+    class: 'Nursery',
     town_id: ''
   });
 
@@ -78,6 +79,10 @@ const StudentManagement = React.memo(() => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
+    // Prevent double submission
+    if (submitting) return;
+    setSubmitting(true);
+    
     const studentData = {
       ...formData,
       town_id: parseInt(formData.town_id),
@@ -101,6 +106,9 @@ const StudentManagement = React.memo(() => {
       loadStudents();
     } catch (error) {
       console.error('Error saving student:', error);
+      alert('Error saving student. Please try again.');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -177,6 +185,8 @@ const StudentManagement = React.memo(() => {
 
   const handleViewDetails = (student) => {
     setViewingStudent(student);
+    // Scroll to top when viewing student details
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const getAvailableBalance = (student) => {
@@ -426,8 +436,12 @@ const StudentManagement = React.memo(() => {
               </div>
 
               <div className="form-actions">
-                <button type="submit" className="btn btn-primary">
-                  {editingStudent ? 'Update' : 'Create'} Student
+                <button 
+                  type="submit" 
+                  className="btn btn-primary"
+                  disabled={submitting}
+                >
+                  {submitting ? 'Saving...' : (editingStudent ? 'Update' : 'Create')} Student
                 </button>
                 <button 
                   type="button" 

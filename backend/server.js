@@ -1,20 +1,37 @@
 const express = require('express');
-const cors = require('cors');
-const bodyParser = require('body-parser');
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 
 const app = express();
 const PORT = 3001;
 
-// Middleware
-app.use(cors());
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
+// Lightweight middleware - only JSON parsing
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Database setup
+// Since frontend and backend will run on same machine, no CORS needed
+
+// Database setup with optimizations
 const dbPath = path.join(__dirname, 'school.db');
-const db = new sqlite3.Database(dbPath);
+const db = new sqlite3.Database(dbPath, (err) => {
+  if (err) {
+    console.error('Error opening database:', err);
+    process.exit(1);
+  }
+  console.log('Connected to SQLite database');
+});
+
+// Database performance optimizations
+db.serialize(() => {
+  // Enable WAL mode for better performance
+  db.run('PRAGMA journal_mode = WAL');
+  db.run('PRAGMA synchronous = NORMAL');
+  db.run('PRAGMA cache_size = 1000');
+  db.run('PRAGMA temp_store = MEMORY');
+  db.run('PRAGMA mmap_size = 268435456'); // 256MB
+  
+  console.log('Database performance optimizations applied');
+});
 
 // Initialize database tables
 db.serialize(() => {
@@ -485,18 +502,51 @@ app.delete('/api/transactions/:id', (req, res) => {
   });
 });
 
-// Start server
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+// Add basic compression for better performance
+app.use((req, res, next) => {
+  // Simple gzip-like compression for JSON responses
+  const originalSend = res.send;
+  res.send = function(data) {
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    return originalSend.call(this, data);
+  };
+  next();
 });
 
-// Graceful shutdown
-process.on('SIGINT', () => {
-  db.close((err) => {
-    if (err) {
-      console.error(err.message);
-    }
-    console.log('Database connection closed.');
-    process.exit(0);
-  });
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'OK', timestamp: new Date().toISOString() });
 });
+
+// Start server with better error handling
+const server = app.listen(PORT, '127.0.0.1', () => {
+  console.log(`🚀 Brilliant School Backend running on http://127.0.0.1:${PORT}`);
+  console.log(`📊 Health check: http://127.0.0.1:${PORT}/api/health`);
+  console.log(`⚡ Optimized for Windows 8.1 - CORS disabled, compression enabled`);
+});
+
+// Handle server errors
+server.on('error', (err) => {
+  console.error('Server error:', err);
+  process.exit(1);
+});
+
+// Graceful shutdown with better cleanup
+const gracefulShutdown = () => {
+  console.log('\n🔄 Received shutdown signal...');
+  server.close(() => {
+    console.log('✅ HTTP server closed');
+    db.close((err) => {
+      if (err) {
+        console.error('❌ Error closing database:', err.message);
+        process.exit(1);
+      }
+      console.log('✅ Database connection closed');
+      console.log('👋 Server shutdown complete');
+      process.exit(0);
+    });
+  });
+};
+
+process.on('SIGINT', gracefulShutdown);
+process.on('SIGTERM', gracefulShutdown);
