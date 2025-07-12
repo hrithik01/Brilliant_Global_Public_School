@@ -25,7 +25,8 @@ const TransactionManagement = React.memo(() => {
     name: '',
     date: '',
     amount_paid: '',
-    fee_type: 'mainFees'
+    fee_type: 'mainFees',
+    online: false
   });
 
   useEffect(() => {
@@ -63,7 +64,8 @@ const TransactionManagement = React.memo(() => {
         name: formData.name,
         date: formData.date,
         amount_paid: parseInt(formData.amount_paid),
-        fee_type: formData.fee_type
+        fee_type: formData.fee_type,
+        online: formData.online
       };
 
       if (editingTransaction) {
@@ -90,7 +92,8 @@ const TransactionManagement = React.memo(() => {
       name: transaction.name,
       date: transaction.date,
       amount_paid: transaction.amount_paid.toString(),
-      fee_type: transaction.fee_type
+      fee_type: transaction.fee_type,
+      online: transaction.online || false
     });
     setIsAddModalOpen(true);
   };
@@ -119,7 +122,8 @@ const TransactionManagement = React.memo(() => {
       name: '',
       date: '',
       amount_paid: '',
-      fee_type: 'mainFees'
+      fee_type: 'mainFees',
+      online: false
     });
   };
 
@@ -148,9 +152,18 @@ const TransactionManagement = React.memo(() => {
   };
 
   const getFilteredStudents = () => {
-    return students.filter(student => 
-      !formData.class || student.class === formData.class
-    );
+    let filteredStudents;
+    
+    if (formData.class) {
+      // If a class is selected, show only students from that class
+      filteredStudents = students.filter(student => student.class === formData.class);
+    } else {
+      // If no class is selected, show all students
+      filteredStudents = [...students];
+    }
+    
+    // Always sort students alphabetically by name (A-Z)
+    return filteredStudents.sort((a, b) => a.name.localeCompare(b.name));
   };
 
   const getFilteredTransactions = () => {
@@ -187,19 +200,6 @@ const TransactionManagement = React.memo(() => {
         return 'Course Fees';
       default:
         return feeType;
-    }
-  };
-
-  const getFeeTypeColor = (feeType) => {
-    switch (feeType) {
-      case 'mainFees':
-        return 'fee-main';
-      case 'busFees':
-        return 'fee-bus';
-      case 'courseFees':
-        return 'fee-course';
-      default:
-        return 'fee-other';
     }
   };
 
@@ -243,13 +243,12 @@ const TransactionManagement = React.memo(() => {
               <div className="form-container">
                 <div className="form-row">
                   <div className="form-group">
-                    <label>Class*:</label>
+                    <label>Class:</label>
                     <select
                       value={formData.class}
                       onChange={(e) => handleClassChange(e.target.value)}
-                      required
                     >
-                      <option value="">Select Class</option>
+                      <option value="">All Classes</option>
                       {CLASSES.map((cls) => (
                         <option key={cls} value={cls}>
                           {cls}
@@ -264,12 +263,16 @@ const TransactionManagement = React.memo(() => {
                       value={formData.student_id}
                       onChange={(e) => handleStudentChange(e.target.value)}
                       required
-                      disabled={!formData.class}
                     >
-                      <option value="">Select Student</option>
+                      <option value="">
+                        {formData.class ? "Select Student" : "Select Student (All Classes A-Z)"}
+                      </option>
                       {getFilteredStudents().map((student) => (
                         <option key={student.id} value={student.id}>
-                          {student.name}
+                          {formData.class 
+                            ? `${student.name} c/o ${student.parents_name}`
+                            : `${student.name} c/o ${student.parents_name} (${student.class})`
+                          }
                         </option>
                       ))}
                     </select>
@@ -288,6 +291,23 @@ const TransactionManagement = React.memo(() => {
                         </option>
                       ))}
                     </select>
+                  </div>
+
+                  <div className="form-group">
+                    <label>Online Payment:</label>
+                    <div className="toggle-switch">
+                      <input
+                        type="checkbox"
+                        id="online-toggle"
+                        checked={formData.online}
+                        onChange={(e) => setFormData({...formData, online: e.target.checked})}
+                      />
+                      <label htmlFor="online-toggle" className="toggle-label">
+                        <span className="toggle-text">
+                          {formData.online ? 'Yes' : 'No'}
+                        </span>
+                      </label>
+                    </div>
                   </div>
                 </div>
 
@@ -453,7 +473,7 @@ const TransactionManagement = React.memo(() => {
               <th>Date</th>
               <th>Student Name</th>
               <th>Class</th>
-              <th>Fee Type</th>
+              <th>Online</th>
               <th>Amount Paid</th>
               <th>Actions</th>
             </tr>
@@ -469,8 +489,8 @@ const TransactionManagement = React.memo(() => {
                   </span>
                 </td>
                 <td>
-                  <span className={`fee-type-tag ${getFeeTypeColor(transaction.fee_type)}`}>
-                    {getFeeTypeLabel(transaction.fee_type)}
+                  <span className={`online-status ${transaction.online ? 'online-yes' : 'online-no'}`}>
+                    {transaction.online ? 'Yes' : 'No'}
                   </span>
                 </td>
                 <td className="amount-cell">₹{transaction.amount_paid}</td>

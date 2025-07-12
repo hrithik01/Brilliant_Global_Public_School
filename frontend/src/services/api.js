@@ -1,11 +1,13 @@
 const API_BASE_URL = 'http://localhost:3001/api';
 
 // Helper function for better error handling and performance
-const fetchWithTimeout = async (url, options = {}, timeout = 5000) => {
+const fetchWithTimeout = async (url, options = {}, timeout = 8000) => {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeout);
   
   try {
+    console.log(`API Request: ${options.method || 'GET'} ${url}`);
+    
     const response = await fetch(url, {
       ...options,
       signal: controller.signal,
@@ -17,15 +19,25 @@ const fetchWithTimeout = async (url, options = {}, timeout = 5000) => {
     
     clearTimeout(timeoutId);
     
+    console.log(`API Response: ${response.status} ${response.statusText}`);
+    
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      const errorText = await response.text().catch(() => 'Unknown error');
+      throw new Error(`HTTP ${response.status}: ${errorText}`);
     }
     
-    return response.json();
+    const data = await response.json();
+    console.log(`API Data received:`, data?.length ? `${data.length} items` : 'Success');
+    return data;
   } catch (error) {
     clearTimeout(timeoutId);
+    console.error(`API Error for ${url}:`, error);
+    
     if (error.name === 'AbortError') {
-      throw new Error('Request timeout - please try again');
+      throw new Error('Request timeout - server may be slow or unreachable');
+    }
+    if (error.message.includes('Failed to fetch')) {
+      throw new Error('Cannot connect to server - make sure backend is running on port 3001');
     }
     throw error;
   }

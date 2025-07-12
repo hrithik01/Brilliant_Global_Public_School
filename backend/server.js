@@ -9,30 +9,44 @@ const PORT = 3001;
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Minimal CORS for localhost only (since frontend runs on port 3000)
+// Enhanced CORS for localhost with better Windows compatibility
 app.use((req, res, next) => {
-  // Only allow localhost origins for security
-  const allowedOrigins = ['http://localhost:3000', 'http://127.0.0.1:3000'];
+  const allowedOrigins = [
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
+    'http://0.0.0.0:3000',
+    // For Windows compatibility - sometimes uses different IPs
+    'http://[::1]:5000',
+    'http://localhost:5000',
+    'http://127.0.0.1:5000',
+    'http://0.0.0.0:5000',
+    // For Windows compatibility - sometimes uses different IPs
+    'http://[::1]:5000'
+  ];
+  
   const origin = req.headers.origin;
   
-  if (allowedOrigins.includes(origin)) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
+  // Log requests for debugging
+  console.log(`${new Date().toISOString()} - ${req.method} ${req.url} from origin: ${origin || 'no origin'}`);
+  
+  // Always set CORS headers for development
+  if (allowedOrigins.includes(origin) || !origin) {
+    res.setHeader('Access-Control-Allow-Origin', origin || '*');
+  } else {
+    // Still allow same-origin requests (when no origin header is sent)
+    res.setHeader('Access-Control-Allow-Origin', '*');
   }
   
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
   res.setHeader('Access-Control-Allow-Credentials', 'true');
+  res.setHeader('Access-Control-Max-Age', '86400'); // Cache preflight for 24 hours
   
   // Handle preflight requests
   if (req.method === 'OPTIONS') {
     res.status(200).end();
     return;
   }
-  
-  // Security headers
-  res.setHeader('X-Content-Type-Options', 'nosniff');
-  res.setHeader('X-Frame-Options', 'DENY');
-  res.setHeader('X-XSS-Protection', '1; mode=block');
   next();
 });
 
@@ -230,6 +244,29 @@ db.serialize(() => {
       }
     });
   });
+
+  // Migration: Add online column to transactions table (if needed)
+  db.all("PRAGMA table_info(transactions)", (err, columns) => {
+    if (err) {
+      console.error('Error getting transactions table columns:', err);
+      return;
+    }
+    
+    const hasOnlineColumn = columns.some(col => col.name === 'online');
+    
+    if (!hasOnlineColumn) {
+      console.log('Adding online column to transactions table...');
+      db.run("ALTER TABLE transactions ADD COLUMN online BOOLEAN DEFAULT 0", (err) => {
+        if (err) {
+          console.error('Error adding online column:', err);
+        } else {
+          console.log('Successfully added online column to transactions table');
+        }
+      });
+    } else {
+      console.log('Transactions table already has online column - no migration needed');
+    }
+  });
 });
 
 // Routes
@@ -407,13 +444,13 @@ app.get('/api/transactions/student/:studentId', (req, res) => {
 });
 
 app.post('/api/transactions', (req, res) => {
-  const { student_id, name, date, amount_paid, fee_type } = req.body;
+  const { student_id, name, date, amount_paid, fee_type, online } = req.body;
   
   db.serialize(() => {
     // Insert transaction
     db.run(
-      'INSERT INTO transactions (student_id, name, date, amount_paid, fee_type) VALUES (?, ?, ?, ?, ?)',
-      [student_id, name, date, amount_paid, fee_type || 'mainFees'],
+      'INSERT INTO transactions (student_id, name, date, amount_paid, fee_type, online) VALUES (?, ?, ?, ?, ?, ?)',
+      [student_id, name, date, amount_paid, fee_type || 'mainFees', online ? 1 : 0],
       function(err) {
         if (err) {
           res.status(500).json({ error: err.message });
@@ -440,7 +477,7 @@ app.post('/api/transactions', (req, res) => {
 
 app.put('/api/transactions/:id', (req, res) => {
   const { id } = req.params;
-  const { student_id, name, date, amount_paid, fee_type } = req.body;
+  const { student_id, name, date, amount_paid, fee_type, online } = req.body;
   
   db.serialize(() => {
     // Get old transaction amount
@@ -457,8 +494,8 @@ app.put('/api/transactions/:id', (req, res) => {
       
       // Update transaction
       db.run(
-        'UPDATE transactions SET student_id = ?, name = ?, date = ?, amount_paid = ?, fee_type = ? WHERE id = ?',
-        [student_id, name, date, amount_paid, fee_type || 'mainFees', id],
+        'UPDATE transactions SET student_id = ?, name = ?, date = ?, amount_paid = ?, fee_type = ?, online = ? WHERE id = ?',
+        [student_id, name, date, amount_paid, fee_type || 'mainFees', online ? 1 : 0, id],
         function(err) {
           if (err) {
             res.status(500).json({ error: err.message });

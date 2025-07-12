@@ -13,6 +13,8 @@ const StudentManagement = React.memo(() => {
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [viewingStudent, setViewingStudent] = useState(null);
+  const [error, setError] = useState(null);
+  const [showMobile, setShowMobile] = useState(false);
   
   // Filter states - default to Nursery class
   const [filters, setFilters] = useState({
@@ -58,11 +60,14 @@ const StudentManagement = React.memo(() => {
 
   const loadStudents = async () => {
     setLoading(true);
+    setError(null);
     try {
       const data = await ApiService.getStudents();
       setStudents(data);
+      console.log(`Loaded ${data.length} students successfully`);
     } catch (error) {
       console.error('Error loading students:', error);
+      setError(`Failed to load students: ${error.message}`);
     }
     setLoading(false);
   };
@@ -71,8 +76,10 @@ const StudentManagement = React.memo(() => {
     try {
       const data = await ApiService.getTowns();
       setTowns(data);
+      console.log(`Loaded ${data.length} towns successfully`);
     } catch (error) {
       console.error('Error loading towns:', error);
+      setError(`Failed to load towns: ${error.message}`);
     }
   };
 
@@ -229,6 +236,33 @@ const StudentManagement = React.memo(() => {
           </button>
         </div>
       </div>
+
+      {/* Error Display */}
+      {error && (
+        <div className="error-message" style={{
+          backgroundColor: '#fee',
+          border: '1px solid #fcc',
+          color: '#c00',
+          padding: '10px',
+          margin: '10px 0',
+          borderRadius: '4px'
+        }}>
+          <strong>Error:</strong> {error}
+          <button 
+            onClick={() => setError(null)}
+            style={{
+              float: 'right',
+              background: 'none',
+              border: 'none',
+              color: '#c00',
+              cursor: 'pointer',
+              fontSize: '16px'
+            }}
+          >
+            ×
+          </button>
+        </div>
+      )}
 
       {/* Town Management Modal */}
       {showTownManagement && (
@@ -502,6 +536,17 @@ const StudentManagement = React.memo(() => {
               Clear Filters
             </button>
           </div>
+          
+          <div className="filter-group">
+            <label className="checkbox-label">
+              <input
+                type="checkbox"
+                checked={showMobile}
+                onChange={(e) => setShowMobile(e.target.checked)}
+              />
+              Show Mobile
+            </label>
+          </div>
         </div>
       </div>
 
@@ -516,6 +561,9 @@ const StudentManagement = React.memo(() => {
               <th>Class</th>
               <th>Gender</th>
               <th>Town</th>
+              <th>Parents Name</th>
+              {showMobile && <th>Mobile Number</th>}
+              <th>Fees Paid</th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -543,6 +591,11 @@ const StudentManagement = React.memo(() => {
                 <td>{student.class}</td>
                 <td>{student.gender}</td>
                 <td>{student.town_name || 'N/A'}</td>
+                <td>{student.parents_name}</td>
+                {showMobile && <td>{student.contact_info}</td>}
+                <td className="amount-cell">
+                  ₹{student.total_fees_paid || 0}
+                </td>
                 <td>
                   <div className="table-actions">
                     <button
@@ -572,6 +625,22 @@ const StudentManagement = React.memo(() => {
           </div>
         )}
         </div>
+
+        {/* Summary */}
+        {filteredStudents.length > 0 && (
+          <div className="students-summary">
+            <div className="summary-stats">
+              <div className="stat-item">
+                <label>Total Students:</label>
+                <span>{filteredStudents.length}</span>
+              </div>
+              <div className="stat-item">
+                <label>Total Fees Paid:</label>
+                <span>₹{filteredStudents.reduce((sum, student) => sum + (student.total_fees_paid || 0), 0)}</span>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Student Details Modal */}
