@@ -267,6 +267,60 @@ db.serialize(() => {
       console.log('Transactions table already has online column - no migration needed');
     }
   });
+
+  // Migration: Add receipt_number column to transactions table (if needed)
+  // db.all("PRAGMA table_info(transactions)", (err, columns) => {
+  //   if (err) {
+  //     console.error('Error getting transactions table columns:', err);
+  //     return;
+  //   }
+    
+  //   const hasReceiptNumberColumn = columns.some(col => col.name === 'receipt_number');
+    
+  //   if (!hasReceiptNumberColumn) {
+  //     console.log('Adding receipt_number column to transactions table...');
+  //     db.run("ALTER TABLE transactions ADD COLUMN receipt_number TEXT", (err) => {
+  //       if (err) {
+  //         console.error('Error adding receipt_number column:', err);
+  //       } else {
+  //         console.log('Successfully added receipt_number column to transactions table');
+  //       }
+  //     });
+  //   } else {
+  //     console.log('Transactions table already has receipt_number column - no migration needed');
+  //   }
+  // });
+
+  // Migration: Add isActive column to students table (if needed)
+  // db.all("PRAGMA table_info(students)", (err, columns) => {
+  //   if (err) {
+  //     console.error('Error getting students table columns:', err);
+  //     return;
+  //   }
+    
+  //   const hasIsActiveColumn = columns.some(col => col.name === 'isActive');
+    
+  //   if (!hasIsActiveColumn) {
+  //     console.log('Adding isActive column to students table...');
+  //     db.run("ALTER TABLE students ADD COLUMN isActive BOOLEAN DEFAULT 1", (err) => {
+  //       if (err) {
+  //         console.error('Error adding isActive column:', err);
+  //       } else {
+  //         console.log('Successfully added isActive column to students table');
+  //         // Set all existing students as active
+  //         db.run("UPDATE students SET isActive = 1 WHERE isActive IS NULL", (updateErr) => {
+  //           if (updateErr) {
+  //             console.error('Error updating existing students isActive status:', updateErr);
+  //           } else {
+  //             console.log('Successfully set all existing students as active');
+  //           }
+  //         });
+  //       }
+  //     });
+  //   } else {
+  //     console.log('Students table already has isActive column - no migration needed');
+  //   }
+  // });
 });
 
 // Routes
@@ -329,7 +383,18 @@ app.get('/api/students', (req, res) => {
     SELECT s.*, t.name as town_name 
     FROM students s 
     LEFT JOIN towns t ON s.town_id = t.id 
-    ORDER BY s.name
+    ORDER BY 
+      CASE s.class
+        WHEN 'Nursery' THEN 1
+        WHEN 'LKG' THEN 2
+        WHEN 'UKG' THEN 3
+        WHEN 'First' THEN 4
+        WHEN 'Second' THEN 5
+        WHEN 'Third' THEN 6
+        WHEN 'Fourth' THEN 7
+        ELSE 8
+      END,
+      s.name
   `;
   
   db.all(query, (err, rows) => {
@@ -348,7 +413,18 @@ app.get('/api/students/class/:className', (req, res) => {
     FROM students s 
     LEFT JOIN towns t ON s.town_id = t.id 
     WHERE s.class = ?
-    ORDER BY s.name
+    ORDER BY 
+      CASE s.class
+        WHEN 'Nursery' THEN 1
+        WHEN 'LKG' THEN 2
+        WHEN 'UKG' THEN 3
+        WHEN 'First' THEN 4
+        WHEN 'Second' THEN 5
+        WHEN 'Third' THEN 6
+        WHEN 'Fourth' THEN 7
+        ELSE 8
+      END,
+      s.name
   `;
   
   db.all(query, [className], (err, rows) => {
@@ -361,14 +437,14 @@ app.get('/api/students/class/:className', (req, res) => {
 });
 
 app.post('/api/students', (req, res) => {
-  const { name, gender, dob, class: studentClass, parents_name, contact_info, town_id, house, fees_total, is_bus_service_opted, bus_fees_amount, course_fees_amount, remarks } = req.body;
+  const { name, gender, dob, class: studentClass, parents_name, contact_info, town_id, house, fees_total, is_bus_service_opted, bus_fees_amount, course_fees_amount, remarks, isActive } = req.body;
   
   const query = `
-    INSERT INTO students (name, gender, dob, class, parents_name, contact_info, town_id, house, fees_total, is_bus_service_opted, bus_fees_amount, course_fees_amount, remarks)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO students (name, gender, dob, class, parents_name, contact_info, town_id, house, fees_total, is_bus_service_opted, bus_fees_amount, course_fees_amount, remarks, isActive)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
   
-  db.run(query, [name, gender, dob, studentClass, parents_name, contact_info, town_id, house, fees_total, is_bus_service_opted ? 1 : 0, bus_fees_amount || 0, course_fees_amount || 0, remarks || ''], function(err) {
+  db.run(query, [name, gender, dob, studentClass, parents_name, contact_info, town_id, house, fees_total, is_bus_service_opted ? 1 : 0, bus_fees_amount || 0, course_fees_amount || 0, remarks || '', isActive !== undefined ? (isActive ? 1 : 0) : 1], function(err) {
     if (err) {
       res.status(500).json({ error: err.message });
       return;
@@ -379,15 +455,15 @@ app.post('/api/students', (req, res) => {
 
 app.put('/api/students/:id', (req, res) => {
   const { id } = req.params;
-  const { name, gender, dob, class: studentClass, parents_name, contact_info, town_id, house, fees_total, is_bus_service_opted, bus_fees_amount, course_fees_amount, remarks } = req.body;
+  const { name, gender, dob, class: studentClass, parents_name, contact_info, town_id, house, fees_total, is_bus_service_opted, bus_fees_amount, course_fees_amount, remarks, isActive } = req.body;
   
   const query = `
     UPDATE students 
-    SET name = ?, gender = ?, dob = ?, class = ?, parents_name = ?, contact_info = ?, town_id = ?, house = ?, fees_total = ?, is_bus_service_opted = ?, bus_fees_amount = ?, course_fees_amount = ?, remarks = ?
+    SET name = ?, gender = ?, dob = ?, class = ?, parents_name = ?, contact_info = ?, town_id = ?, house = ?, fees_total = ?, is_bus_service_opted = ?, bus_fees_amount = ?, course_fees_amount = ?, remarks = ?, isActive = ?
     WHERE id = ?
   `;
   
-  db.run(query, [name, gender, dob, studentClass, parents_name, contact_info, town_id, house, fees_total, is_bus_service_opted ? 1 : 0, bus_fees_amount || 0, course_fees_amount || 0, remarks || '', id], function(err) {
+  db.run(query, [name, gender, dob, studentClass, parents_name, contact_info, town_id, house, fees_total, is_bus_service_opted ? 1 : 0, bus_fees_amount || 0, course_fees_amount || 0, remarks || '', isActive !== undefined ? (isActive ? 1 : 0) : 1, id], function(err) {
     if (err) {
       res.status(500).json({ error: err.message });
       return;
@@ -444,13 +520,13 @@ app.get('/api/transactions/student/:studentId', (req, res) => {
 });
 
 app.post('/api/transactions', (req, res) => {
-  const { student_id, name, date, amount_paid, fee_type, online } = req.body;
+  const { student_id, name, date, amount_paid, fee_type, online, receipt_number } = req.body;
   
   db.serialize(() => {
     // Insert transaction
     db.run(
-      'INSERT INTO transactions (student_id, name, date, amount_paid, fee_type, online) VALUES (?, ?, ?, ?, ?, ?)',
-      [student_id, name, date, amount_paid, fee_type || 'mainFees', online ? 1 : 0],
+      'INSERT INTO transactions (student_id, name, date, amount_paid, fee_type, online, receipt_number) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      [student_id, name, date, amount_paid, fee_type || 'mainFees', online ? 1 : 0, receipt_number || null],
       function(err) {
         if (err) {
           res.status(500).json({ error: err.message });
@@ -477,7 +553,7 @@ app.post('/api/transactions', (req, res) => {
 
 app.put('/api/transactions/:id', (req, res) => {
   const { id } = req.params;
-  const { student_id, name, date, amount_paid, fee_type, online } = req.body;
+  const { student_id, name, date, amount_paid, fee_type, online, receipt_number } = req.body;
   
   db.serialize(() => {
     // Get old transaction amount
@@ -494,8 +570,8 @@ app.put('/api/transactions/:id', (req, res) => {
       
       // Update transaction
       db.run(
-        'UPDATE transactions SET student_id = ?, name = ?, date = ?, amount_paid = ?, fee_type = ?, online = ? WHERE id = ?',
-        [student_id, name, date, amount_paid, fee_type || 'mainFees', online ? 1 : 0, id],
+        'UPDATE transactions SET student_id = ?, name = ?, date = ?, amount_paid = ?, fee_type = ?, online = ?, receipt_number = ? WHERE id = ?',
+        [student_id, name, date, amount_paid, fee_type || 'mainFees', online ? 1 : 0, receipt_number || null, id],
         function(err) {
           if (err) {
             res.status(500).json({ error: err.message });
@@ -579,6 +655,20 @@ app.use((req, res, next) => {
 app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
 });
+
+// // Utility endpoint to set all students as inactive (for development/testing)
+// app.post('/api/students/set-all-inactive', (req, res) => {
+//   db.run('UPDATE students SET isActive = 0', function(err) {
+//     if (err) {
+//       res.status(500).json({ error: err.message });
+//       return;
+//     }
+//     res.json({ 
+//       success: true, 
+//       message: `Updated ${this.changes} students to inactive status` 
+//     });
+//   });
+// });
 
 // Start server with better error handling
 const server = app.listen(PORT, '127.0.0.1', () => {

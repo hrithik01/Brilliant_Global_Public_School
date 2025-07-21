@@ -9,6 +9,8 @@ const TransactionManagement = React.memo(() => {
   const [editingTransaction, setEditingTransaction] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [editingReceiptId, setEditingReceiptId] = useState(null);
+  const [editingReceiptValue, setEditingReceiptValue] = useState('');
 
   // Filter states
   const [filterClass, setFilterClass] = useState('');
@@ -26,7 +28,8 @@ const TransactionManagement = React.memo(() => {
     date: '',
     amount_paid: '',
     fee_type: 'mainFees',
-    online: false
+    online: false,
+    receipt_number: ''
   });
 
   useEffect(() => {
@@ -65,7 +68,8 @@ const TransactionManagement = React.memo(() => {
         date: formData.date,
         amount_paid: parseInt(formData.amount_paid),
         fee_type: formData.fee_type,
-        online: formData.online
+        online: formData.online,
+        receipt_number: formData.receipt_number
       };
 
       if (editingTransaction) {
@@ -93,7 +97,8 @@ const TransactionManagement = React.memo(() => {
       date: transaction.date,
       amount_paid: transaction.amount_paid.toString(),
       fee_type: transaction.fee_type,
-      online: transaction.online || false
+      online: transaction.online || false,
+      receipt_number: transaction.receipt_number || ''
     });
     setIsAddModalOpen(true);
   };
@@ -123,7 +128,8 @@ const TransactionManagement = React.memo(() => {
       date: '',
       amount_paid: '',
       fee_type: 'mainFees',
-      online: false
+      online: false,
+      receipt_number: ''
     });
   };
 
@@ -201,6 +207,36 @@ const TransactionManagement = React.memo(() => {
       default:
         return feeType;
     }
+  };
+
+  const handleReceiptEdit = (transaction) => {
+    setEditingReceiptId(transaction.id);
+    setEditingReceiptValue(transaction.receipt_number || '');
+  };
+
+  const handleReceiptSave = async (transactionId) => {
+    try {
+      const transaction = transactions.find(t => t.id === transactionId);
+      if (!transaction) return;
+
+      const updatedData = {
+        ...transaction,
+        receipt_number: editingReceiptValue
+      };
+
+      await ApiService.updateTransaction(transactionId, updatedData);
+      setEditingReceiptId(null);
+      setEditingReceiptValue('');
+      fetchTransactions();
+    } catch (err) {
+      setError('Failed to update receipt number');
+      console.error(err);
+    }
+  };
+
+  const handleReceiptCancel = () => {
+    setEditingReceiptId(null);
+    setEditingReceiptValue('');
   };
 
   const filteredTransactions = getFilteredTransactions();
@@ -308,6 +344,16 @@ const TransactionManagement = React.memo(() => {
                         </span>
                       </label>
                     </div>
+                  </div>
+
+                  <div className="form-group">
+                    <label>Receipt Number:</label>
+                    <input
+                      type="text"
+                      value={formData.receipt_number}
+                      onChange={(e) => setFormData({...formData, receipt_number: e.target.value})}
+                      placeholder="Enter receipt number"
+                    />
                   </div>
                 </div>
 
@@ -474,6 +520,7 @@ const TransactionManagement = React.memo(() => {
               <th>Student Name</th>
               <th>Class</th>
               <th>Online</th>
+              <th>Receipt Number</th>
               <th>Amount Paid</th>
               <th>Actions</th>
             </tr>
@@ -492,6 +539,56 @@ const TransactionManagement = React.memo(() => {
                   <span className={`online-status ${transaction.online ? 'online-yes' : 'online-no'}`}>
                     {transaction.online ? 'Yes' : 'No'}
                   </span>
+                </td>
+                <td>
+                  {editingReceiptId === transaction.id ? (
+                    <div className="inline-edit">
+                      <input
+                        type="text"
+                        value={editingReceiptValue}
+                        onChange={(e) => setEditingReceiptValue(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            handleReceiptSave(transaction.id);
+                          } else if (e.key === 'Escape') {
+                            handleReceiptCancel();
+                          }
+                        }}
+                        autoFocus
+                        className="receipt-input"
+                        placeholder="Enter receipt number"
+                      />
+                      <div className="inline-edit-actions">
+                        <button
+                          onClick={() => handleReceiptSave(transaction.id)}
+                          className="btn btn-xs btn-success"
+                          title="Save (Enter)"
+                        >
+                          ✓
+                        </button>
+                        <button
+                          onClick={handleReceiptCancel}
+                          className="btn btn-xs btn-secondary"
+                          title="Cancel (Esc)"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div 
+                      className="receipt-display" 
+                      onClick={() => handleReceiptEdit(transaction)}
+                      title="Click to edit receipt number"
+                    >
+                      <span className="receipt-text">
+                        {transaction.receipt_number || '-'}
+                      </span>
+                      <span className="edit-hint">
+                        ✏️
+                      </span>
+                    </div>
+                  )}
                 </td>
                 <td className="amount-cell">₹{transaction.amount_paid}</td>
                 <td>

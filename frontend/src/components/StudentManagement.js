@@ -15,6 +15,7 @@ const StudentManagement = React.memo(() => {
   const [viewingStudent, setViewingStudent] = useState(null);
   const [error, setError] = useState(null);
   const [showMobile, setShowMobile] = useState(false);
+  const [showActiveOnly, setShowActiveOnly] = useState(true);
   
   // Filter states - default to Nursery class
   const [filters, setFilters] = useState({
@@ -35,7 +36,8 @@ const StudentManagement = React.memo(() => {
     is_bus_service_opted: false,
     bus_fees_amount: '',
     course_fees_amount: '',
-    remarks: ''
+    remarks: '',
+    isActive: true
   });
 
   useEffect(() => {
@@ -54,9 +56,37 @@ const StudentManagement = React.memo(() => {
     if (filters.town_id) {
       filtered = filtered.filter(student => student.town_id === parseInt(filters.town_id));
     }
+
+    // Filter by active status - by default show only active students
+    if (showActiveOnly) {
+      filtered = filtered.filter(student => student.isActive === true || student.isActive === 1);
+    }
+
+    // Sort by class order then by name
+    filtered.sort((a, b) => {
+      const classOrder = {
+        'Nursery': 1,
+        'LKG': 2,
+        'UKG': 3,
+        'First': 4,
+        'Second': 5,
+        'Third': 6,
+        'Fourth': 7
+      };
+      
+      const aClassOrder = classOrder[a.class] || 8;
+      const bClassOrder = classOrder[b.class] || 8;
+      
+      if (aClassOrder !== bClassOrder) {
+        return aClassOrder - bClassOrder;
+      }
+      
+      // If same class, sort by name alphabetically
+      return a.name.localeCompare(b.name);
+    });
     
     setFilteredStudents(filtered);
-  }, [students, filters]);
+  }, [students, filters, showActiveOnly]);
 
   const loadStudents = async () => {
     setLoading(true);
@@ -134,7 +164,8 @@ const StudentManagement = React.memo(() => {
       is_bus_service_opted: student.is_bus_service_opted || false,
       bus_fees_amount: student.bus_fees_amount?.toString() || '',
       course_fees_amount: student.course_fees_amount?.toString() || '',
-      remarks: student.remarks || ''
+      remarks: student.remarks || '',
+      isActive: student.isActive !== undefined ? student.isActive : true
     });
     setShowForm(true);
   };
@@ -167,7 +198,8 @@ const StudentManagement = React.memo(() => {
       is_bus_service_opted: false,
       bus_fees_amount: '',
       course_fees_amount: '',
-      remarks: ''
+      remarks: '',
+      isActive: true
     });
   };
 
@@ -194,6 +226,25 @@ const StudentManagement = React.memo(() => {
     setViewingStudent(student);
     // Scroll to top when viewing student details
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleToggleActiveStatus = async (studentId, isActive) => {
+    try {
+      // Find the student to get all their data
+      const student = students.find(s => s.id === studentId);
+      if (!student) return;
+
+      // Update student with new isActive status
+      const updatedStudent = { ...student, isActive };
+      
+      await ApiService.updateStudent(studentId, updatedStudent);
+      
+      // Reload students to reflect changes
+      await loadStudents();
+    } catch (error) {
+      console.error('Error updating student status:', error);
+      setError('Failed to update student status');
+    }
   };
 
   const getAvailableBalance = (student) => {
@@ -467,6 +518,17 @@ const StudentManagement = React.memo(() => {
                     style={{ resize: 'vertical' }}
                   />
                 </div>
+
+                <div className="form-group">
+                  <label className="checkbox-label">
+                    <input
+                      type="checkbox"
+                      checked={formData.isActive}
+                      onChange={(e) => setFormData({...formData, isActive: e.target.checked})}
+                    />
+                    Active Student
+                  </label>
+                </div>
               </div>
 
               <div className="form-actions">
@@ -547,6 +609,17 @@ const StudentManagement = React.memo(() => {
               Show Mobile
             </label>
           </div>
+
+          <div className="filter-group">
+            <label className="checkbox-label">
+              <input
+                type="checkbox"
+                checked={showActiveOnly}
+                onChange={(e) => setShowActiveOnly(e.target.checked)}
+              />
+              Show Active Students
+            </label>
+          </div>
         </div>
       </div>
 
@@ -564,6 +637,7 @@ const StudentManagement = React.memo(() => {
               <th>Parents Name</th>
               {showMobile && <th>Mobile Number</th>}
               <th>Fees Paid</th>
+              <th>Status</th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -571,22 +645,24 @@ const StudentManagement = React.memo(() => {
             {filteredStudents.map((student) => (
               <tr key={student.id}>
                 <td>
-                  <button
-                    onClick={() => handleViewDetails(student)}
-                    className="student-name-link"
-                    style={{
-                      background: 'none',
-                      border: 'none',
-                      color: '#4c51bf',
-                      cursor: 'pointer',
-                      textDecoration: 'underline',
-                      fontSize: 'inherit',
-                      padding: 0,
-                      textAlign: 'left'
-                    }}
-                  >
-                    {student.name}
-                  </button>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                    <button
+                      onClick={() => handleViewDetails(student)}
+                      className="student-name-link"
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: '#4c51bf',
+                        cursor: 'pointer',
+                        textDecoration: 'underline',
+                        fontSize: 'inherit',
+                        padding: 0,
+                        textAlign: 'center'
+                      }}
+                    >
+                      {student.name}
+                    </button>
+                  </div>
                 </td>
                 <td>{student.class}</td>
                 <td>{student.gender}</td>
@@ -595,6 +671,18 @@ const StudentManagement = React.memo(() => {
                 {showMobile && <td>{student.contact_info}</td>}
                 <td className="amount-cell">
                   ₹{student.total_fees_paid || 0}
+                </td>
+                <td>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <label className="toggle-switch">
+                      <input
+                        type="checkbox"
+                        checked={student.isActive === true || student.isActive === 1}
+                        onChange={(e) => handleToggleActiveStatus(student.id, e.target.checked)}
+                      />
+                      <span className="toggle-slider"></span>
+                    </label>
+                  </div>
                 </td>
                 <td>
                   <div className="table-actions">
@@ -748,6 +836,15 @@ const StudentManagement = React.memo(() => {
                   <label>Payment Status:</label>
                   <span className={`status-tag ${getStatusColor(viewingStudent)}`}>
                     {getStatusText(viewingStudent)}
+                  </span>
+                </div>
+              </div>
+
+              <div className="detail-row">
+                <div className="detail-group">
+                  <label>Student Status:</label>
+                  <span className={`status-tag ${(viewingStudent.isActive === true || viewingStudent.isActive === 1) ? 'status-paid' : 'status-unpaid'}`}>
+                    {(viewingStudent.isActive === true || viewingStudent.isActive === 1) ? 'Active' : 'Inactive'}
                   </span>
                 </div>
               </div>

@@ -234,7 +234,7 @@ td .btn:last-child {
   color: #2d3748;
   font-weight: 600;
   padding: 1.2rem; /* 20% larger */
-  text-align: left;
+  text-align: center;
   border-bottom: 2px solid #e2e8f0;
   position: sticky;
   top: 0;
@@ -246,6 +246,7 @@ td .btn:last-child {
   padding: 1.05rem 1.2rem; /* 20% larger */
   border-bottom: 1px solid #e2e8f0;
   vertical-align: middle;
+  text-align: center;
 }
 
 /* Actions column styling */
@@ -851,6 +852,9 @@ td .btn:last-child {
   font-weight: 600;
   color: #2d3748;
   font-size: 1rem;
+  min-width: 120px;
+  text-align: center;
+  padding-right: 1rem;
 }
 
 /* Transaction Summary */
@@ -1039,4 +1043,199 @@ td .btn:last-child {
   font-size: 1.3rem;
   font-weight: 600;
   margin-bottom: 1rem;
+}
+
+/* Inline editing styles for receipt numbers */
+.inline-edit {
+  display: flex;
+  align-items: center;
+  gap: 3px; /* Reduced from 5px by 40% */
+}
+
+.receipt-input {
+  width: 120px !important;
+  padding: 4px 6px !important;
+  border: 1px solid #ddd !important;
+  border-radius: 3px !important;
+  font-size: 12px !important;
+  font-family: inherit !important;
+}
+
+.receipt-input:focus {
+  outline: none !important;
+  border-color: #4c51bf !important;
+  box-shadow: 0 0 0 2px rgba(76, 81, 191, 0.1) !important;
+}
+
+.inline-edit-actions {
+  display: inline-flex;
+  gap: 1px; /* Reduced from 2px by 50% to maintain proportion */
+}
+
+.btn-xs {
+  padding: 2px 6px !important;
+  font-size: 11px !important;
+  border: none !important;
+  border-radius: 2px !important;
+  cursor: pointer !important;
+  font-weight: 500 !important;
+}
+
+.btn-success {
+  background-color: #28a745 !important;
+  color: white !important;
+}
+
+.btn-success:hover {
+  background-color: #218838 !important;
+}
+
+.receipt-display {
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 3px;
+  transition: background-color 0.2s;
+  min-height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  max-width: 150px; /* Constrain the width */
+  position: relative;
+}
+
+.receipt-display:hover {
+  background-color: #f8f9fa;
+}
+
+.receipt-text {
+  flex: 0 1 auto; /* Don't grow, but can shrink */
+  min-width: 0; /* Allow shrinking */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-right: 5px; /* Space before edit icon */
+}
+
+.edit-hint {
+  margin-left: 0; /* Remove left margin since receipt-text has right margin */
+  opacity: 0.6;
+  font-size: 11px;
+  transition: opacity 0.2s;
+  flex-shrink: 0; /* Don't shrink the edit icon */
+}
+
+.receipt-display:hover .edit-hint {
+  opacity: 1;
+}
+
+/* Receipt number column styling */
+.transactions-table th:nth-child(5), /* Receipt Number header */
+.transactions-table td:nth-child(5) { /* Receipt Number data cells */
+  width: 150px;
+  max-width: 150px;
+  min-width: 120px;
+}
+
+/* Toggle Switch Styles */
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 50px;
+  height: 24px;
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  -webkit-transition: .4s;
+  transition: .4s;
+  border-radius: 24px;
+}
+
+.toggle-slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  -webkit-transition: .4s;
+  transition: .4s;
+  border-radius: 50%;
+}
+
+input:checked + .toggle-slider {
+  background-color: #4CAF50;
+}
+
+input:focus + .toggle-slider {
+  box-shadow: 0 0 1px #4CAF50;
+}
+
+input:checked + .toggle-slider:before {
+  -webkit-transform: translateX(26px);
+  -ms-transform: translateX(26px);
+  transform: translateX(26px);
+}
+
+/* Disabled state for toggle */
+.toggle-switch input:disabled + .toggle-slider {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Students Table Column Widths */
+.students-table th:nth-child(7), /* Fees Paid header */
+.students-table td:nth-child(7) { /* Fees Paid data cells */
+  width: 140px;
+  min-width: 120px;
+  max-width: 160px;
+}
+
+.students-table th:nth-child(8), /* Status header */
+.students-table td:nth-child(8) { /* Status data cells */
+  width: 80px;
+  min-width: 70px;
+  max-width: 90px;
+  text-align: center;
+}
+
+/* Shift Status header to the right */
+.students-table th:nth-child(8) {
+  padding-left: 2rem;
+}
+
+/* Make toggle switch smaller in table */
+.students-table .toggle-switch {
+  width: 40px;
+  height: 20px;
+}
+
+.students-table .toggle-slider {
+  border-radius: 20px;
+}
+
+.students-table .toggle-slider:before {
+  height: 14px;
+  width: 14px;
+  left: 3px;
+  bottom: 3px;
+}
+
+.students-table input:checked + .toggle-slider:before {
+  -webkit-transform: translateX(20px);
+  -ms-transform: translateX(20px);
+  transform: translateX(20px);
 }

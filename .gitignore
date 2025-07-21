@@ -119,7 +119,7 @@ Desktop.ini
 *~
 
 # Database files (if you want to exclude the SQLite database)
-*.db
+*.db*
 *.sqlite
 *.sqlite3
 
